@@ -13,7 +13,8 @@ from picamera2.devices.imx500.postprocess_highernet import \
 from pythonosc import udp_client
 from pythonosc.osc_message_builder import OscMessageBuilder
 
-dest_ip = "192.168.1.147"
+# TODO Change this based on command line arguments
+dest_ip = "35.6.168.186"
 dest_port = 35155
 
 last_boxes = None
@@ -43,14 +44,14 @@ def send_pose(keypoints: np.ndarray):
         return
 
     # create message and send
-    builder = OscMessageBuilder(address=OSC_ADDRESS)
-    for landmark in keypoints[0]:
-        builder.add_arg(float(landmark[0] / WINDOW_SIZE_H_W[1]))
-        builder.add_arg(float(landmark[1] / WINDOW_SIZE_H_W[0]))
-        builder.add_arg(float(landmark[2]))
-    msg = builder.build()
-    client.send(msg)
-    print(msg)
+    for i in range(len(keypoint_list)):
+        builder = OscMessageBuilder(address=(OSC_ADDRESS + "/" + keypoint_list[i]))
+        builder.add_arg(float(keypoints[0][i][0] / WINDOW_SIZE_H_W[1])) # x
+        builder.add_arg(float(keypoints[0][i][1] / WINDOW_SIZE_H_W[0])) # y
+        builder.add_arg(float(keypoints[0][i][2]))                      # z
+        msg = builder.build()
+        client.send(msg)
+        # print(msg)
 
 def ai_output_tensor_parse(metadata: dict):
     """Parse the output tensor into a number of detected objects, scaled to the ISP output."""
@@ -147,7 +148,7 @@ if __name__ == "__main__":
     config = picam2.create_preview_configuration(controls={'FrameRate': intrinsics.inference_rate}, buffer_count=12)
 
     imx500.show_network_fw_progress_bar()
-    picam2.start(config, show_preview=True)
+    picam2.start(config, show_preview=False)
     imx500.set_auto_aspect_ratio()
     picam2.pre_callback = picamera2_pre_callback
 
